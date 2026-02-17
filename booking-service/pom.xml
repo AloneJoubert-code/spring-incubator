@@ -76,6 +76,12 @@
             <version>6.2.0</version>
         </dependency>
 
+        <!-- OpenAPI / Swagger UI -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+        </dependency>
+
         <!-- Devtools (optional) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

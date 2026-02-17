@@ -41,6 +41,7 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable()) // !!! Disclaimer: NEVER DISABLE CSRF IN PRODUCTION !!!
                 .authorizeHttpRequests(authorize -> authorize
+                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
                         .requestMatchers(HttpMethod.GET, "/flights/specials").hasRole("LOYALTY_USER")
                         .requestMatchers(HttpMethod.GET, "/flights/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/flights/**").hasRole("ADMIN")
