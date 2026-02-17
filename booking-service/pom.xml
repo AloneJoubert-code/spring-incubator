@@ -65,6 +65,17 @@
             <artifactId>spring-boot-starter-web-services</artifactId>
         </dependency>
 
+        <!-- JMS / ActiveMQ (notification queue) -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-jms</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.activemq</groupId>
+            <artifactId>activemq-client</artifactId>
+            <version>6.2.0</version>
+        </dependency>
+
         <!-- Devtools (optional) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
