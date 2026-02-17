@@ -5,6 +5,7 @@ import entelect.training.incubator.spring.booking.model.BookingSearchRequest;
 import entelect.training.incubator.spring.booking.model.CustomerResponse;
 import entelect.training.incubator.spring.booking.model.FlightResponse;
 import entelect.training.incubator.spring.booking.model.SearchType;
+import entelect.training.incubator.spring.booking.model.SmsNotification;
 import entelect.training.incubator.spring.booking.repository.BookingRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.security.SecureRandom;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.function.Supplier;
 
@@ -27,6 +29,7 @@ public class BookingService {
 
     private static final String ALPHABET_NUMBERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     private static final int RANDOM_SUFFIX_LENGTH = 4;
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd-MM-yyyy");
 
     private final SecureRandom random = new SecureRandom();
 
@@ -34,13 +37,16 @@ public class BookingService {
     private final CustomerApiClient customerApiClient;
     private final FlightApiClient flightApiClient;
     private final LoyaltyApiClient loyaltyApiClient;
+    private final NotificationPublisher notificationPublisher;
 
     public BookingService(BookingRepository bookingRepository, CustomerApiClient customerApiClient,
-                          FlightApiClient flightApiClient, LoyaltyApiClient loyaltyApiClient) {
+                          FlightApiClient flightApiClient, LoyaltyApiClient loyaltyApiClient,
+                          NotificationPublisher notificationPublisher) {
         this.bookingRepository = bookingRepository;
         this.customerApiClient = customerApiClient;
         this.flightApiClient = flightApiClient;
         this.loyaltyApiClient = loyaltyApiClient;
+        this.notificationPublisher = notificationPublisher;
     }
 
     public Booking createBooking(Booking booking) {
@@ -71,12 +77,32 @@ public class BookingService {
             CustomerResponse customer = customerApiClient.getCustomer(booking.getCustomerId());
             FlightResponse flight = flightApiClient.getFlight(booking.getFlightId());
 
-            BigDecimal rewardAmount = BigDecimal.valueOf(flight.getSeatCost());
-            loyaltyApiClient.captureRewards(customer.getPassportNumber(), rewardAmount);
+            // Loyalty rewards capture
+            try {
+                BigDecimal rewardAmount = BigDecimal.valueOf(flight.getSeatCost());
+                loyaltyApiClient.captureRewards(customer.getPassportNumber(), rewardAmount);
+                LOGGER.info("Loyalty rewards captured for booking {}", savedBooking.getReferenceNumber());
+            } catch (Exception e) {
+                LOGGER.error("Failed to capture loyalty rewards for booking {}: {}",
+                        savedBooking.getReferenceNumber(), e.getMessage(), e);
+            }
 
-            LOGGER.info("Loyalty rewards captured for booking {}", savedBooking.getReferenceNumber());
+            // Booking notification via queue
+            try {
+                String flightDate = flight.getDepartureTime().format(DATE_FORMATTER);
+                String message = String.format(
+                        "Molo Air: Confirming flight %s booked for %s %s on %s.",
+                        flight.getFlightNumber(), customer.getFirstName(), customer.getLastName(), flightDate);
+
+                SmsNotification notification = new SmsNotification(customer.getPhoneNumber(), message);
+                notificationPublisher.publishBookingNotification(notification);
+                LOGGER.info("Booking notification published for booking {}", savedBooking.getReferenceNumber());
+            } catch (Exception e) {
+                LOGGER.error("Failed to publish booking notification for booking {}: {}",
+                        savedBooking.getReferenceNumber(), e.getMessage(), e);
+            }
         } catch (Exception e) {
-            LOGGER.error("Failed to capture loyalty rewards for booking {}: {}",
+            LOGGER.error("Failed to fetch customer/flight data for booking {}: {}",
                     savedBooking.getReferenceNumber(), e.getMessage(), e);
         }
 
