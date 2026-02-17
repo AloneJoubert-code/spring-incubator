@@ -1,4 +1,4 @@
-package entelect.training.incubator.spring.flight.config;
+package entelect.training.incubator.spring.booking.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -20,13 +20,6 @@ public class SecurityConfig {
      * The commented code below shows you how to connect to a DB. You will also want to use some kind of password encoding/hashing.
      */
 
-    //    @Autowired
-    //    private DataSource securityDataSource;
-    //
-    //    @Override
-    //    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-    //        auth.jdbcAuthentication().dataSource(securityDataSource);
-    //    }
     @Bean
     InMemoryUserDetailsManager inMemoryAuthManager() {
         return new InMemoryUserDetailsManager(
@@ -40,8 +33,9 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable()) // !!! Disclaimer: NEVER DISABLE CSRF IN PRODUCTION !!!
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers(HttpMethod.GET, "/flights/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/flights/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/bookings/**").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/bookings/search").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/bookings/**").hasAnyRole("ADMIN")
                         .anyRequest().authenticated()
                 )
                 .httpBasic(Customizer.withDefaults());
