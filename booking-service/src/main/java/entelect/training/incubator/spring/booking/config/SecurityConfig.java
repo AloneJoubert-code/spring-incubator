@@ -24,7 +24,8 @@ public class SecurityConfig {
     InMemoryUserDetailsManager inMemoryAuthManager() {
         return new InMemoryUserDetailsManager(
                 User.builder().username("user").password("{noop}the_cake").roles("USER").build(),
-                User.builder().username("admin").password("{noop}is_a_lie").roles("ADMIN").build()
+                User.builder().username("loyalty").password("{noop}the_lie_is_a_cake").roles("USER", "LOYALTY_USER").build(),
+                User.builder().username("admin").password("{noop}is_a_lie").roles("USER", "ADMIN").build()
         );
     }
 
@@ -33,9 +34,9 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable()) // !!! Disclaimer: NEVER DISABLE CSRF IN PRODUCTION !!!
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers(HttpMethod.GET, "/bookings/**").hasAnyRole("USER", "ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/bookings/search").hasAnyRole("USER", "ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/bookings/**").hasAnyRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/bookings/**").hasRole("USER")
+                        .requestMatchers(HttpMethod.POST, "/bookings/search").hasRole("USER")
+                        .requestMatchers(HttpMethod.POST, "/bookings/**").hasRole("USER")
                         .anyRequest().authenticated()
                 )
                 .httpBasic(Customizer.withDefaults());
