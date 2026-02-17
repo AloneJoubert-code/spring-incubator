@@ -1,6 +1,11 @@
 spring:
   application:
     name: notification-service
+  activemq:
+    broker-url: tcp://localhost:61616
 
 server:
   port: 8206
+
+notification:
+  queue: booking-notification-queue
