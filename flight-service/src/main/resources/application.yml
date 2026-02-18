@@ -9,6 +9,11 @@ spring:
   jpa:
     hibernate:
       ddl-auto: create
+  cache:
+    type: caffeine
+    caffeine:
+      spec: expireAfterWrite=30m
+    cache-names: flightSearchCache
 
 server:
   port: 8202
